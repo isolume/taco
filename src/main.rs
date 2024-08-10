@@ -27,6 +27,12 @@ lazy_static! {
 #[async_trait]
 impl EventHandler for Handler {
     async fn message(&self, ctx: Context, msg: Message) {
+        if msg.author.id.get() == 1081466107153633371 {
+            return;
+        }
+
+        let typing = msg.channel_id.start_typing(&ctx.http);
+        
         let mut ollama = OLLAMA.lock().await;
         let summary_model = "llama3.1:latest".to_string();
         let model = "taco".to_string();
@@ -41,7 +47,7 @@ impl EventHandler for Handler {
             .guild()
             .expect("Channel could not be converted to guild channel");
 
-        if msg.channel_id.get() == 1270867600309489756 && msg.author.id.get() != 1081466107153633371 {
+        if msg.channel_id.get() == 1270867600309489756 {
             let history_id = msg.id.get().to_string();
 
             let res = ollama.send_chat_messages_with_history(
@@ -73,7 +79,7 @@ impl EventHandler for Handler {
                 }
             }
         }
-        else if channel.parent_id.expect("Channel parent id could not be found").get() == 1270867600309489756 && msg.author.id.get() != 1081466107153633371 {
+        else if channel.parent_id.expect("Channel parent id could not be found").get() == 1270867600309489756 {
             let history_id = msg.channel_id.get().to_string();
 
             let res = ollama.send_chat_messages_with_history(
@@ -94,6 +100,7 @@ impl EventHandler for Handler {
 
             }
         }
+        typing.stop();
     }
 
     async fn ready(&self, ctx: Context, data: Ready) {
