@@ -17,7 +17,11 @@ mod commands;
 struct Handler;
 
 lazy_static! {
-    static ref OLLAMA: Mutex<Ollama> = Mutex::new(Ollama::new_with_history("http://10.0.0.246".to_string(), 11434, 100));
+    static ref OLLAMA: Mutex<Ollama> = Mutex::new(Ollama::new_with_history(
+        env::var("OLLAMA_URL").expect("Expected a URL in the environment"),
+        env::var("OLLAMA_PORT").expect("Expected a port in the environment").parse().expect("Expected port to be an integer"),
+        1000
+    ));
 }
 
 #[async_trait]
