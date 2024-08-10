@@ -1,0 +1,7 @@
+services:
+  taco:
+    image: ghcr.io/isolume/taco:latest
+    environment:
+      - DISCORD_TOKEN=${DISCORD_TOKEN}
+      - OLLAMA_URL=${OLLAMA_URL}
+      - OLLAMA_PORT=${OLLAMA_PORT}
