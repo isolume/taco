@@ -30,8 +30,6 @@ impl EventHandler for Handler {
         if msg.author.id.get() == 1081466107153633371 {
             return;
         }
-
-        let typing = msg.channel_id.start_typing(&ctx.http);
         
         let mut ollama = OLLAMA.lock().await;
         let summary_model = "llama3.1:latest".to_string();
@@ -48,6 +46,7 @@ impl EventHandler for Handler {
             .expect("Channel could not be converted to guild channel");
 
         if msg.channel_id.get() == 1270867600309489756 {
+            let typing = msg.channel_id.start_typing(&ctx.http);
             let history_id = msg.id.get().to_string();
 
             let res = ollama.send_chat_messages_with_history(
@@ -78,8 +77,10 @@ impl EventHandler for Handler {
                     }
                 }
             }
+            typing.stop();
         }
         else if channel.parent_id.expect("Channel parent id could not be found").get() == 1270867600309489756 {
+            let typing = msg.channel_id.start_typing(&ctx.http);
             let history_id = msg.channel_id.get().to_string();
 
             let res = ollama.send_chat_messages_with_history(
@@ -97,10 +98,9 @@ impl EventHandler for Handler {
                         println!("Error sending message: {:?}", why);
                     }
                 }
-
             }
+            typing.stop();
         }
-        typing.stop();
     }
 
     async fn ready(&self, ctx: Context, data: Ready) {
