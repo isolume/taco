@@ -4,6 +4,7 @@ version = "0.1.0"
 edition = "2021"
 
 [dependencies]
+base64 = "0.22.1"
 ollama-rs = {version = "0.2.0", features = ["chat-history"]}
 lazy_static = "1.5.0"
 serenity = "0.12.2"

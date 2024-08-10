@@ -1,5 +1,5 @@
 use std::env;
-
+use base64::Engine;
 use ollama_rs::generation::chat::ChatMessage;
 use ollama_rs::generation::chat::request::ChatMessageRequest;
 use ollama_rs::Ollama;
@@ -11,6 +11,7 @@ use serenity::all::{ActivityData, CreateInteractionResponse, CreateInteractionRe
 
 use lazy_static::lazy_static;
 use ollama_rs::generation::completion::request::GenerationRequest;
+use ollama_rs::generation::images::Image;
 
 mod commands;
 
@@ -27,11 +28,36 @@ lazy_static! {
 #[async_trait]
 impl EventHandler for Handler {
     async fn message(&self, ctx: Context, msg: Message) {
+        if msg.author.id.get() == 1081466107153633371 {
+            return;
+        }
+
         let mut ollama = OLLAMA.lock().await;
         let summary_model = "llama3.1:latest".to_string();
         let model = "taco".to_string();
         let prompt = msg.content;
-        let full_prompt = format!("SYSTEM: User's tag: <@{}. User's name: {}. User's message:> {}", msg.author.id.get(), msg.author.name, prompt);
+        let mut partial_prompt = format!("SYSTEM: User's tag: <@{}. User's name: {}.", msg.author.id.get(), msg.author.name);
+        let image_prompt = "SYSTEM: Please describe the image in the following message. Do not ask questions back. Assume that you are not talking to a user with your response, but instead writing a description for a visually impaired person. Also, do not surround the text with quotes. Please be as concise as possible in your response, and try to keep it to 1 to 2 sentences.".to_string();
+        
+        let mut num: u8 = 1;
+
+        let typing = msg.channel_id.start_typing(&ctx.http);
+
+        //check if the message has an attachment image
+        for attachment in msg.attachments {
+            if attachment.content_type.clone().unwrap().contains("image") {
+                let attachment = attachment.download().await.expect("Could not download attachment");
+                let attachment = base64::engine::general_purpose::STANDARD.encode(attachment);
+                let summary = ollama.generate(GenerationRequest::new("llava:latest".to_string(), image_prompt.clone())
+                    .add_image(Image::from_base64(&attachment))
+                ).await.expect("TODO: panic message");
+                partial_prompt.push_str(&format!(" Image description #{num}: {}.", summary.response));
+                num += 1;
+            }
+        }
+        
+        let full_prompt = format!("{} User's message: {}", partial_prompt, prompt);
+        println!("Prompt: {}", full_prompt);
 
         let channel = msg
             .channel_id
@@ -41,7 +67,7 @@ impl EventHandler for Handler {
             .guild()
             .expect("Channel could not be converted to guild channel");
 
-        if msg.channel_id.get() == 1270867600309489756 && msg.author.id.get() != 1081466107153633371 {
+        if msg.channel_id.get() == 1270867600309489756 {
             let history_id = msg.id.get().to_string();
 
             let res = ollama.send_chat_messages_with_history(
@@ -73,7 +99,7 @@ impl EventHandler for Handler {
                 }
             }
         }
-        else if channel.parent_id.expect("Channel parent id could not be found").get() == 1270867600309489756 && msg.author.id.get() != 1081466107153633371 {
+        else if channel.parent_id.expect("Channel parent id could not be found").get() == 1270867600309489756 {
             let history_id = msg.channel_id.get().to_string();
 
             let res = ollama.send_chat_messages_with_history(
@@ -91,9 +117,9 @@ impl EventHandler for Handler {
                         println!("Error sending message: {:?}", why);
                     }
                 }
-
             }
         }
+        typing.stop();
     }
 
     async fn ready(&self, ctx: Context, data: Ready) {
