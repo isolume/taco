@@ -13,7 +13,7 @@ COPY . .
 RUN cargo build --release
 RUN mv ./target/release/taco ./app
 
-FROM debian:stable-slim AS runtime
+FROM alpine:latest AS runtime
 LABEL authors="isolume"
 LABEL org.opencontainers.image.source=https://github.com/isolume/taco
 LABEL org.opencontainers.image.description="taco"
