@@ -1,22 +1,11 @@
-FROM lukemathwalker/cargo-chef:latest as chef
-WORKDIR /app
-
-FROM chef AS planner
-COPY ./Cargo.toml ./Cargo.lock ./
-COPY ./src ./src
-RUN cargo chef prepare
-
-FROM chef AS builder
-COPY --from=planner /app/recipe.json .
-RUN cargo chef cook --release
-COPY . .
-RUN cargo build --release
-RUN mv ./target/release/taco ./app
-
-FROM alpine:latest AS runtime
+FROM rust:latest
 LABEL authors="isolume"
 LABEL org.opencontainers.image.source=https://github.com/isolume/taco
 LABEL org.opencontainers.image.description="taco"
-WORKDIR /app
-COPY --from=builder /app/app /usr/local/bin/
-ENTRYPOINT ["/usr/local/bin/app"]
+
+WORKDIR /usr/src/taco
+COPY . .
+
+RUN cargo install --path .
+
+CMD ["taco"]
