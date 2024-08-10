@@ -36,9 +36,9 @@ impl EventHandler for Handler {
         let model = "taco".to_string();
         let prompt = msg.content;
         let full_prompt = if let Some(referenced_message) = msg.referenced_message {
-            format!("SYSTEM: Referenced message: {}. Referenced author's ID: {}. User's ID: <@{}. User's message:> {}",referenced_message.content, referenced_message.author.id.get(), msg.author.id.get(), prompt)
+            format!("SYSTEM: Referenced message: {}. Referenced author's ID: <@{}>. User's ID: <@{}>. User's message:> {}",referenced_message.content, referenced_message.author.id.get(), msg.author.id.get(), prompt)
         } else {
-            format!("SYSTEM: User's ID: <@{}. User's message:> {}", msg.author.id.get(), prompt)
+            format!("SYSTEM: User's ID: <@{}>. User's message:> {}", msg.author.id.get(), prompt)
         };
 
         let channel = msg
