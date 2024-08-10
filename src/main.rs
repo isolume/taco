@@ -35,7 +35,11 @@ impl EventHandler for Handler {
         let summary_model = "llama3.1:latest".to_string();
         let model = "taco".to_string();
         let prompt = msg.content;
-        let full_prompt = format!("SYSTEM: User's tag: <@{}. User's name: {}. User's message:> {}", msg.author.id.get(), msg.author.name, prompt);
+        let full_prompt = if let Some(referenced_message) = msg.referenced_message {
+            format!("SYSTEM: Referenced message: {}. Referenced author's name: {}. User's tag: <@{}. User's name: {}. User's message:> {}",referenced_message.content, referenced_message.author.name, msg.author.id.get(), msg.author.name, prompt)
+        } else {
+            format!("SYSTEM: User's tag: <@{}. User's name: {}. User's message:> {}", msg.author.id.get(), msg.author.name, prompt)
+        };
 
         let channel = msg
             .channel_id
