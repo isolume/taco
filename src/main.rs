@@ -83,7 +83,7 @@ impl EventHandler for Handler {
             }
             typing.stop();
         }
-        else if channel.parent_id.expect("Channel parent id could not be found").get() == 1270867600309489756 {
+        else if channel.parent_id.expect("Channel parent id could not be found").get() == 1270867600309489756 || msg.guild_id.is_none() {
             let typing = msg.channel_id.start_typing(&ctx.http);
             let history_id = msg.channel_id.get().to_string();
 
