@@ -31,6 +31,8 @@ impl EventHandler for Handler {
             return;
         }
         
+        println!("{}", msg.guild_id.is_none());
+        
         let mut ollama = OLLAMA.lock().await;
         let summary_model = "llama3.1:latest".to_string();
         let model = "taco".to_string();
@@ -41,14 +43,17 @@ impl EventHandler for Handler {
             format!("SYSTEM: User's ID: <@{}>. User's message:> {}", msg.author.id.get(), prompt)
         };
 
-        let channel = msg
-            .channel_id
-            .to_channel(&ctx.http)
-            .await
-            .expect("Channel id could not be converted to Channel")
-            .guild()
-            .expect("Channel could not be converted to guild channel");
-
+        let channel = if msg.guild_id.is_some() {
+            Some(msg
+                .channel_id
+                .to_channel(&ctx.http)
+                .await
+                .expect("Channel id could not be converted to Channel")
+                .guild()
+                .expect("Channel could not be converted to guild channel"))
+        } else {
+            None
+        };
         if msg.channel_id.get() == 1270867600309489756 {
             let typing = msg.channel_id.start_typing(&ctx.http);
             let history_id = msg.id.get().to_string();
@@ -83,7 +88,7 @@ impl EventHandler for Handler {
             }
             typing.stop();
         }
-        else if channel.parent_id.expect("Channel parent id could not be found").get() == 1270867600309489756 || msg.guild_id.is_none() {
+        else if (channel.as_ref().map_or(false, |ch| ch.parent_id.expect("Channel parent id could not be found").get() == 1270867600309489756)) || msg.guild_id.is_none() {
             let typing = msg.channel_id.start_typing(&ctx.http);
             let history_id = msg.channel_id.get().to_string();
 
