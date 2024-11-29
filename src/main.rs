@@ -7,7 +7,7 @@ use ollama_rs::Ollama;
 use serenity::async_trait;
 use serenity::model::channel::Message;
 use serenity::prelude::*;
-use serenity::all::{ActivityData, CreateInteractionResponse, CreateInteractionResponseMessage, CreateThread, GuildId, Interaction, Ready};
+use serenity::all::{ActivityData, Command, CreateInteractionResponse, CreateInteractionResponseMessage, CreateThread, GuildId, Interaction, Ready};
 
 use lazy_static::lazy_static;
 use ollama_rs::generation::completion::request::GenerationRequest;
@@ -125,14 +125,20 @@ impl EventHandler for Handler {
             .set_commands(&ctx.http, vec![
                 commands::ping::register(),
             ]).await;
+
+        let global_command =
+            Command::create_global_command(&ctx.http, commands::forget::register())
+                .await;
         
-        println!("The following commands have been registered for guild {}: {:#?}", guild_id, commands)
+        println!("The following commands have been registered for guild {}: {:#?}", guild_id, commands);
+        println!("The following commands have been registered globally: {global_command:#?}");
     }
 
     async fn interaction_create(&self, ctx: Context, interaction: Interaction) {
         if let Interaction::Command(command) = interaction {
             let content = match command.data.name.as_str() {
                 "ping" => Some(commands::ping::run(&command.data.options())),
+                "forget" => Some(commands::forget::run(&command.data.options(), OLLAMA.lock().await.to_owned())),
                 _ => Some("Error, command not implemented!".to_string())
             };
             

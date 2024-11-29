@@ -42,6 +42,28 @@ dependencies = [
 ]
 
 [[package]]
+name = "async-stream"
+version = "0.3.6"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "0b5a71a6f37880a80d1d7f19efd781e4b5de42c88f0722cc13bcb6cc2cfe8476"
+dependencies = [
+ "async-stream-impl",
+ "futures-core",
+ "pin-project-lite",
+]
+
+[[package]]
+name = "async-stream-impl"
+version = "0.3.6"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "c7c24de15d275a1ecfd47a380fb4d5ec9bfe0933f309ed5e705b775596a3574d"
+dependencies = [
+ "proc-macro2",
+ "quote",
+ "syn 2.0.75",
+]
+
+[[package]]
 name = "async-trait"
 version = "0.1.81"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -191,9 +213,9 @@ dependencies = [
 
 [[package]]
 name = "command_attr"
-version = "0.5.2"
+version = "0.5.3"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "88da8d7e9fe6f30d8e3fcf72d0f84102b49de70fece952633e8439e89bdc7631"
+checksum = "6fcc89439e1bb4e19050a9586a767781a3060000d2f3296fd2a40597ad9421c5"
 dependencies = [
  "proc-macro2",
  "quote",
@@ -895,10 +917,11 @@ dependencies = [
 
 [[package]]
 name = "ollama-rs"
-version = "0.2.0"
+version = "0.2.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "255252ec57e13d2d6ae074c7b7cd8c004d17dafb1e03f954ba2fd5cc226f8f49"
+checksum = "46483ac9e1f9e93da045b5875837ca3c9cf014fd6ab89b4d9736580ddefc4759"
 dependencies = [
+ "async-stream",
  "async-trait",
  "log",
  "reqwest 0.12.5",
@@ -1433,9 +1456,9 @@ dependencies = [
 
 [[package]]
 name = "serenity"
-version = "0.12.2"
+version = "0.12.4"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "880a04106592d0a8f5bdacb1d935889bfbccb4a14f7074984d9cd857235d34ac"
+checksum = "3d72ec4323681bf9a3cabe40fd080abc2435859b502a1b5aa9bf693f125bfa76"
 dependencies = [
  "arrayvec",
  "async-trait",
@@ -1600,7 +1623,7 @@ dependencies = [
 
 [[package]]
 name = "taco"
-version = "1.0.1"
+version = "1.1.0"
 dependencies = [
  "lazy_static",
  "ollama-rs",
@@ -1695,9 +1718,9 @@ checksum = "1f3ccbac311fea05f86f61904b462b55fb3df8837a366dfc601a0161d0532f20"
 
 [[package]]
 name = "tokio"
-version = "1.39.3"
+version = "1.41.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "9babc99b9923bfa4804bd74722ff02c0381021eafa4db9949217e3be8e84fff5"
+checksum = "22cfb5bee7a6a52939ca9224d6ac897bb669134078daa8735560897f69de4d33"
 dependencies = [
  "backtrace",
  "bytes",
