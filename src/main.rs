@@ -1,3 +1,4 @@
+use std::collections::HashMap;
 use std::env;
 
 use ollama_rs::generation::chat::ChatMessage;
@@ -17,11 +18,11 @@ mod commands;
 struct Handler;
 
 lazy_static! {
-    static ref OLLAMA: Mutex<Ollama> = Mutex::new(Ollama::new_with_history(
+    static ref OLLAMA: Mutex<Ollama> = Mutex::new(Ollama::new(
         env::var("OLLAMA_URL").expect("Expected a URL in the environment"),
         env::var("OLLAMA_PORT").expect("Expected a port in the environment").parse().expect("Expected port to be an integer"),
-        1000
     ));
+    static ref HISTORY: Mutex<HashMap<u64, Vec<ChatMessage>>> = Mutex::new(HashMap::new());
 }
 
 #[async_trait]
@@ -31,9 +32,8 @@ impl EventHandler for Handler {
             return;
         }
         
-        println!("{}", msg.guild_id.is_none());
-        
-        let mut ollama = OLLAMA.lock().await;
+        let mut ollama = OLLAMA.lock().await.clone();
+        let mut history = HISTORY.lock().await.clone();
         let summary_model = "llama3.1:latest".to_string();
         let model = "taco".to_string();
         let prompt = msg.content;
@@ -54,16 +54,16 @@ impl EventHandler for Handler {
         } else {
             None
         };
+        let history = history.entry(msg.channel_id.get()).or_insert_with(Vec::new);
         if msg.channel_id.get() == 1270867600309489756 {
             let typing = msg.channel_id.start_typing(&ctx.http);
-            let history_id = msg.id.get().to_string();
 
             let res = ollama.send_chat_messages_with_history(
+                history,
                 ChatMessageRequest::new(
                     model.clone(),
                     vec![ChatMessage::user(full_prompt)],
                 ),
-                history_id
             ).await;
             
             let summary_prompt = format!("SYSTEM: Summarize the following text in 12 words or less. Summarize the text as is, and do not ask questions back.\
@@ -73,7 +73,7 @@ impl EventHandler for Handler {
             let summary = ollama.generate(GenerationRequest::new(summary_model, summary_prompt)).await;
 
             if let (Ok(res), Ok(summary)) = (res, summary) {
-                let res = res.message.expect("Message could not be found!");
+                let res = res.message;
                 let summary = sub_strings(summary.response.as_str(), 100).first().expect("Could not find first 100 chars").to_string();
                 let chat = msg.channel_id.create_thread_from_message(
                     &ctx.http, msg.id.get(),
@@ -88,20 +88,19 @@ impl EventHandler for Handler {
             }
             typing.stop();
         }
-        else if (channel.as_ref().map_or(false, |ch| ch.parent_id.expect("Channel parent id could not be found").get() == 1270867600309489756)) || msg.guild_id.is_none() {
+        else if (channel.as_ref().is_some_and(|ch| ch.parent_id.expect("Channel parent ID could not be found").get() == 1270867600309489756)) || msg.guild_id.is_none() {
             let typing = msg.channel_id.start_typing(&ctx.http);
-            let history_id = msg.channel_id.get().to_string();
 
             let res = ollama.send_chat_messages_with_history(
+                history,
                 ChatMessageRequest::new(
                     model,
                     vec![ChatMessage::user(full_prompt)],
                 ),
-                history_id
             ).await;
 
             if let Ok(res) = res {
-                let res = res.message.expect("Message could not be found!");
+                let res = res.message;
                 for chunk in sub_strings(&res.content, 2000) {
                     if let Err(why) = msg.channel_id.say(&ctx.http, chunk).await {
                         println!("Error sending message: {:?}", why);
@@ -124,6 +123,7 @@ impl EventHandler for Handler {
         let commands = guild_id
             .set_commands(&ctx.http, vec![
                 commands::ping::register(),
+                commands::forget::register(),
             ]).await;
         
         println!("The following commands have been registered for guild {}: {:#?}", guild_id, commands)
@@ -133,6 +133,7 @@ impl EventHandler for Handler {
         if let Interaction::Command(command) = interaction {
             let content = match command.data.name.as_str() {
                 "ping" => Some(commands::ping::run(&command.data.options())),
+                "forget" => Some(commands::forget::run(&command.data.options(), HISTORY.lock().await.clone())),
                 _ => Some("Error, command not implemented!".to_string())
             };
             

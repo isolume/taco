@@ -1,17 +1,18 @@
-use ollama_rs::Ollama;
+use std::collections::HashMap;
+use ollama_rs::generation::chat::ChatMessage;
 use serenity::all::{CommandOptionType, CreateCommandOption};
 use serenity::builder::CreateCommand;
 use serenity::model::application::{ResolvedOption, ResolvedValue};
 
-pub fn run(options: &[ResolvedOption], mut ollama: Ollama) -> String {
+pub fn run(options: &[ResolvedOption], mut history: HashMap<u64, Vec<ChatMessage>>) -> String {
     if let Some(ResolvedOption {
-        value: ResolvedValue::Channel(channel), .. 
+        value: ResolvedValue::Channel(channel), ..
                 }) = options.first()
     {
-        ollama.clear_messages_for_id(channel.id.get().to_string());
+        history.remove(&channel.id.get());
         format!("Forgetting channel: {}", channel.id)
     } else {
-        ollama.clear_all_messages();
+        history.clear();
         "Forgetting everything".to_string()
     }
 }
