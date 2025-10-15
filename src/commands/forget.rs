@@ -1,18 +1,17 @@
-use std::collections::HashMap;
-use ollama_rs::generation::chat::ChatMessage;
 use serenity::all::{CommandOptionType, CreateCommandOption};
 use serenity::builder::CreateCommand;
 use serenity::model::application::{ResolvedOption, ResolvedValue};
+use crate::HISTORY;
 
-pub fn run(options: &[ResolvedOption], mut history: HashMap<u64, Vec<ChatMessage>>) -> String {
+pub async fn run(options: &[ResolvedOption<'_>]) -> String {
     if let Some(ResolvedOption {
         value: ResolvedValue::Channel(channel), ..
                 }) = options.first()
     {
-        history.remove(&channel.id.get());
+        HISTORY.lock().await.remove(&channel.id.get());
         format!("Forgetting channel: {}", channel.id)
     } else {
-        history.clear();
+        HISTORY.lock().await.clear();
         "Forgetting everything".to_string()
     }
 }

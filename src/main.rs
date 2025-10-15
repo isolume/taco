@@ -109,6 +109,7 @@ impl EventHandler for Handler {
             }
             typing.stop();
         }
+        HISTORY.lock().await.insert(msg.channel_id.get(), history.clone());
     }
 
     async fn ready(&self, ctx: Context, data: Ready) {
@@ -133,7 +134,7 @@ impl EventHandler for Handler {
         if let Interaction::Command(command) = interaction {
             let content = match command.data.name.as_str() {
                 "ping" => Some(commands::ping::run(&command.data.options())),
-                "forget" => Some(commands::forget::run(&command.data.options(), HISTORY.lock().await.clone())),
+                "forget" => Some(commands::forget::run(&command.data.options()).await),
                 _ => Some("Error, command not implemented!".to_string())
             };
             
