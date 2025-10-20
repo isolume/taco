@@ -1,6 +1,6 @@
 [package]
 name = "taco"
-version = "2.0.0"
+version = "2.1.0"
 edition = "2021"
 authors = ["Jacob <nerd@isolu.me>"]
 description = "AI Discord bot"
@@ -10,4 +10,4 @@ repository = "https://github.com/isolume/taco"
 ollama-rs = { version = "0.3.2" }
 lazy_static = "1.5"
 serenity = "0.12.4"
-tokio = { version = "1.47", features = ["macros", "rt-multi-thread"] }
+tokio = { version = "1.48", features = ["macros", "rt-multi-thread"] }

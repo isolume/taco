@@ -4,6 +4,7 @@ use std::sync::Arc;
 
 use ollama_rs::generation::chat::request::ChatMessageRequest;
 use ollama_rs::generation::chat::ChatMessage;
+use ollama_rs::generation::completion::request::GenerationRequest;
 use ollama_rs::Ollama;
 
 use serenity::all::{
@@ -15,20 +16,12 @@ use serenity::model::channel::Message;
 use serenity::prelude::*;
 
 use lazy_static::lazy_static;
-use ollama_rs::generation::completion::request::GenerationRequest;
 
 mod commands;
 
 struct Handler;
 
 lazy_static! {
-    static ref OLLAMA: Mutex<Ollama> = Mutex::new(Ollama::new(
-        env::var("OLLAMA_URL").expect("Expected a URL in the environment"),
-        env::var("OLLAMA_PORT")
-            .expect("Expected a port in the environment")
-            .parse()
-            .expect("Expected port to be an integer"),
-    ));
     static ref HISTORY: Mutex<HashMap<u64, Arc<Mutex<Vec<ChatMessage>>>>> =
         Mutex::new(HashMap::new());
 }
@@ -36,24 +29,9 @@ lazy_static! {
 #[async_trait]
 impl EventHandler for Handler {
     async fn message(&self, ctx: Context, msg: Message) {
-        if msg.author.id.get() == 1081466107153633371 {
+        if msg.author.bot {
             return;
         }
-
-        let mut ollama = OLLAMA.lock().await.clone();
-        let summary_model = "llama3.1:latest".to_string();
-        let model = "taco".to_string();
-        let prompt = msg.content.clone();
-        let referenced_message = msg.referenced_message.clone();
-        let full_prompt = if let Some(referenced_message) = referenced_message {
-            format!("SYSTEM: Referenced message: {}. Referenced author's ID: <@{}>. User's ID: <@{}>. User's message:> {}", referenced_message.content, referenced_message.author.id.get(), msg.author.id.get(), prompt)
-        } else {
-            format!(
-                "SYSTEM: User's ID: <@{}>. User's message:> {}",
-                msg.author.id.get(),
-                prompt
-            )
-        };
 
         let channel = if msg.guild_id.is_some() {
             Some(
@@ -77,25 +55,42 @@ impl EventHandler for Handler {
         if msg.channel_id.get() == 1270867600309489756 {
             let typing = msg.channel_id.start_typing(&ctx.http);
 
+            let mut ollama = Ollama::new(
+                env::var("OLLAMA_URL").expect("Expected a URL in the environment"),
+                env::var("OLLAMA_PORT")
+                    .expect("Expected a port in the environment")
+                    .parse()
+                    .expect("Expected port to be an integer"),
+            );
+            let summary_model = "summary".to_string();
+            let model = "taco".to_string();
+            let prompt = msg.content;
+            let referenced_message = msg.referenced_message;
+            let full_prompt = if let Some(referenced_message) = referenced_message {
+                format!("SYSTEM: Referenced message: {}. Referenced author's ID: <@{}>. User's ID: <@{}>. User's message:> {}", referenced_message.content, referenced_message.author.id.get(), msg.author.id.get(), prompt)
+            } else {
+                format!(
+                    "SYSTEM: User's ID: <@{}>. User's message:> {}",
+                    msg.author.id.get(),
+                    prompt
+                )
+            };
+
             let res = {
                 let mut history = history_lock.lock().await;
                 ollama
                     .send_chat_messages_with_history(
                         &mut *history,
                         ChatMessageRequest::new(
-                            model.clone(),
-                            vec![ChatMessage::user(full_prompt.clone())],
+                            model,
+                            vec![ChatMessage::user(full_prompt)],
                         ),
                     )
                     .await
             };
 
-            let summary_prompt = format!("SYSTEM: Summarize the following text in 12 words or less. Summarize the text as is, and do not ask questions back.\
-             Assume that you are not talking to a user with your response, but instead writing the summary for the header of a news publication. Also, do not surround the text with quotes.\
-             Here is the text: {}", prompt);
-
             let summary = ollama
-                .generate(GenerationRequest::new(summary_model, summary_prompt))
+                .generate(GenerationRequest::new(summary_model, prompt))
                 .await;
 
             if let (Ok(res), Ok(summary)) = (res, summary) {
@@ -122,9 +117,29 @@ impl EventHandler for Handler {
                 .expect("Channel parent ID could not be found")
                 .get()
                 == 1270867600309489756
-        })) || msg.guild_id.is_none()
+        })) || msg.guild_id.is_none() && msg.author.id == 1041839238733373450 || msg.content.contains("<@1081466107153633371>") || msg.referenced_message.as_ref().is_some_and(|m| m.author.id.get() == 1081466107153633371)
         {
             let typing = msg.channel_id.start_typing(&ctx.http);
+
+            let mut ollama = Ollama::new(
+                env::var("OLLAMA_URL").expect("Expected a URL in the environment"),
+                env::var("OLLAMA_PORT")
+                    .expect("Expected a port in the environment")
+                    .parse()
+                    .expect("Expected port to be an integer"),
+            );
+            let model = "taco".to_string();
+            let prompt = msg.content;
+            let referenced_message = msg.referenced_message;
+            let full_prompt = if let Some(referenced_message) = referenced_message {
+                format!("SYSTEM: Referenced message: {}. Referenced author's ID: <@{}>. User's ID: <@{}>. User's message:> {}", referenced_message.content, referenced_message.author.id.get(), msg.author.id.get(), prompt)
+            } else {
+                format!(
+                    "SYSTEM: User's ID: <@{}>. User's message:> {}",
+                    msg.author.id.get(),
+                    prompt
+                )
+            };
 
             let res = {
                 let mut history = history_lock.lock().await;
@@ -132,8 +147,8 @@ impl EventHandler for Handler {
                     .send_chat_messages_with_history(
                         &mut *history,
                         ChatMessageRequest::new(
-                            model.clone(),
-                            vec![ChatMessage::user(full_prompt.clone())],
+                            model,
+                            vec![ChatMessage::user(full_prompt)],
                         ),
                     )
                     .await
@@ -161,7 +176,7 @@ impl EventHandler for Handler {
         let commands = guild_id
             .set_commands(
                 &ctx.http,
-                vec![commands::ping::register(), commands::forget::register()],
+                vec![commands::forget::register()],
             )
             .await;
 
@@ -174,7 +189,6 @@ impl EventHandler for Handler {
     async fn interaction_create(&self, ctx: Context, interaction: Interaction) {
         if let Interaction::Command(command) = interaction {
             let content = match command.data.name.as_str() {
-                "ping" => Some(commands::ping::run(&command.data.options())),
                 "forget" => Some(commands::forget::run(&command.data.options()).await),
                 _ => Some("Error, command not implemented!".to_string()),
             };
