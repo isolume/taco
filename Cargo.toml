@@ -1,12 +1,14 @@
 [package]
 name = "taco"
-version = "2.1.0"
+version = "2.2.0"
 edition = "2021"
 authors = ["Jacob <nerd@isolu.me>"]
 description = "AI Discord bot"
 repository = "https://github.com/isolume/taco"
 
 [dependencies]
+anyhow = "1.0"
+base64 = "0.22"
 ollama-rs = { version = "0.3.2" }
 lazy_static = "1.5"
 serenity = "0.12.4"
