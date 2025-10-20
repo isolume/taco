@@ -10,10 +10,10 @@ pub async fn run(options: &[ResolvedOption<'_>]) -> String {
     }) = options.first()
     {
         HISTORY.lock().await.remove(&channel.id.get());
-        format!("Forgetting channel: {}", channel.id)
+        format!("forgetting channel <#{}>", channel.id)
     } else {
         HISTORY.lock().await.clear();
-        "Forgetting everything".to_string()
+        "forgetting everything".to_string()
     }
 }
 
@@ -24,7 +24,7 @@ pub fn register() -> CreateCommand {
             CreateCommandOption::new(
                 CommandOptionType::Channel,
                 "channel",
-                "The channel to forget",
+                "the channel to forget",
             )
             .required(false),
         )
